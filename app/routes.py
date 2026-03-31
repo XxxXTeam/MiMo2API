@@ -286,7 +286,6 @@ async def test_account(request: TestAccountRequest):
 @router.get("/v1/models")
 async def list_models(authorization: Optional[str] = Header(None)):
     """列出可用模型"""
-
     # 验证API Key
     if not validate_api_key(authorization):
         raise HTTPException(status_code=401,
@@ -294,59 +293,43 @@ async def list_models(authorization: Optional[str] = Header(None)):
                                 "message": "invalid api key"
                             }})
 
-    # 返回固定的模型列表
-    return {
-        "data": [{
+    base_models = ["mimo-v2-flash-studio", "mimo-v2-pro"]
+    # 生成所有变体 (thinking, search, thinking+search 等组合)
+    model_variants = []
+    for base_id in base_models:
+        # 基础模型
+        model_variants.append({
             "created": 1774937422,
-            "id": "mimo-v2-flash-studio",
+            "id": base_id,
             "object": "model",
             "owned_by": "xiaomi"
-        }, {
+        })
+        # 仅思考模式
+        model_variants.append({
             "created": 1774937422,
-            "id": "mimo-v2-flash-studio-thinking",
+            "id": f"{base_id}-thinking",
             "object": "model",
             "owned_by": "xiaomi"
-        }, {
+        })
+        # 仅搜索模式
+        model_variants.append({
             "created": 1774937422,
-            "id": "mimo-v2-flash-studio-search",
+            "id": f"{base_id}-search",
             "object": "model",
             "owned_by": "xiaomi"
-        }, {
+        })
+        # 思考+搜索 (两种顺序)
+        model_variants.append({
             "created": 1774937422,
-            "id": "mimo-v2-flash-studio-thinking-search",
+            "id": f"{base_id}-thinking-search",
             "object": "model",
             "owned_by": "xiaomi"
-        }, {
+        })
+        model_variants.append({
             "created": 1774937422,
-            "id": "mimo-v2-flash-studio-search-thinking",
+            "id": f"{base_id}-search-thinking",
             "object": "model",
             "owned_by": "xiaomi"
-        }, {
-            "created": 1774937422,
-            "id": "mimo-v2-flash",
-            "object": "model",
-            "owned_by": "xiaomi"
-        }, {
-            "created": 1774937422,
-            "id": "mimo-v2-flash-thinking",
-            "object": "model",
-            "owned_by": "xiaomi"
-        }, {
-            "created": 1774937422,
-            "id": "mimo-v2-flash-search",
-            "object": "model",
-            "owned_by": "xiaomi"
-        }, {
-            "created": 1774937422,
-            "id": "mimo-v2-flash-thinking-search",
-            "object": "model",
-            "owned_by": "xiaomi"
-        }, {
-            "created": 1774937422,
-            "id": "mimo-v2-flash-search-thinking",
-            "object": "model",
-            "owned_by": "xiaomi"
-        }],
-        "object":
-        "list"
-    }
+        })
+
+    return {"data": model_variants, "object": "list"}
