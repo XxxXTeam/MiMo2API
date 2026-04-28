@@ -46,6 +46,19 @@ python main.py
 
 ## 使用示例
 
+## 支持模型
+
+| 模型 ID (Model) | 模型名称 (Name) | 备注 |
+|------|------|------|
+| `mimo-v2.5-pro` | MiMo-V2.5-Pro | 默认旗舰模型 (开源性能旗舰) |
+| `mimo-v2.5` | MiMo-V2.5 | 全模态理解大模型 (支持翻译/视觉问答) |
+| `mimo-v2-flash-studio` | MiMo-V2-Flash | 极速推理轻量级模型 |
+| `mimo-v2-flash` | MiMo-V2-Flash | 极速推理轻量级大模型 (旧版ID) |
+| `mimo-v2-pro` | MiMo-V2-Pro | 深度思考模型 (旧版ID) |
+| `mimo-v2-omni` | MiMo-V2-Omni | 支持多模态生文 (旧版ID) |
+
+接口同时兼容 `-thinking`、`-search`、`-thinking-search`、`-search-thinking` 后缀，例如 `mimo-v2.5-pro-thinking`。
+
 ### 基础调用
 
 ```bash
@@ -53,7 +66,7 @@ curl http://localhost:8080/v1/chat/completions \
   -H "Authorization: Bearer sk-default" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "mimo-v2-flash-studio",
+    "model": "mimo-v2.5-pro",
     "messages": [
       {"role": "user", "content": "你好"}
     ]
@@ -67,7 +80,7 @@ curl http://localhost:8080/v1/chat/completions \
   -H "Authorization: Bearer sk-default" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "mimo-v2-flash-studio",
+    "model": "mimo-v2.5-pro",
     "messages": [
       {"role": "user", "content": "解释量子纠缠"}
     ],
@@ -82,7 +95,7 @@ curl http://localhost:8080/v1/chat/completions \
   -H "Authorization: Bearer sk-default" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "mimo-v2-flash-studio",
+    "model": "mimo-v2.5-pro",
     "messages": [
       {"role": "user", "content": "写一首诗"}
     ],

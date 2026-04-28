@@ -11,6 +11,7 @@ from .models import (OpenAIRequest, OpenAIResponse, OpenAIChoice,
                      TestAccountRequest)
 from .config import config_manager, MimoAccount
 from .mimo_client import MimoClient
+from .model_catalog import build_model_list, resolve_model_options
 from .utils import parse_curl, build_query_from_messages
 
 router = APIRouter()
@@ -49,21 +50,24 @@ async def chat_completions(request: OpenAIRequest,
     # 构建查询字符串
     query = build_query_from_messages(request.messages)
 
-    # 判断是否启用深度思考
-    thinking = bool(request.reasoning_effort)
+    model_options = resolve_model_options(request.model, request.reasoning_effort)
 
     # 创建Mimo客户端
     client = MimoClient(account)
 
     # 流式响应
     if request.stream:
-        return StreamingResponse(stream_response(client, query, thinking,
+        return StreamingResponse(stream_response(client, query, model_options,
                                                  request.model),
                                  media_type="text/event-stream")
 
     # 非流式响应
     try:
-        content, think_content, usage = await client.call_api(query, thinking)
+        content, think_content, usage = await client.call_api(
+            query,
+            model=model_options["upstream_model"],
+            thinking=model_options["thinking"],
+            search_enabled=model_options["search_enabled"])
 
         # 如果有思考内容，拼接到回复前面
         full_content = content
@@ -96,7 +100,7 @@ async def chat_completions(request: OpenAIRequest,
                             }})
 
 
-async def stream_response(client: MimoClient, query: str, thinking: bool,
+async def stream_response(client: MimoClient, query: str, model_options: dict,
                           model: str):
     """流式响应生成器"""
 
@@ -109,7 +113,11 @@ async def stream_response(client: MimoClient, query: str, thinking: bool,
     in_think = False
 
     try:
-        async for sse_data in client.stream_api(query, thinking):
+        async for sse_data in client.stream_api(
+                query,
+                model=model_options["upstream_model"],
+                thinking=model_options["thinking"],
+                search_enabled=model_options["search_enabled"]):
             content = sse_data.get("content", "")
             if not content:
                 continue
@@ -276,7 +284,7 @@ async def test_account(request: TestAccountRequest):
                               xiaomichatbot_ph=request.xiaomichatbot_ph)
 
         client = MimoClient(account)
-        content, _, _ = await client.call_api("hi", False)
+        content, _, _ = await client.call_api("hi")
 
         return {"success": True, "response": content}
     except Exception as e:
@@ -293,43 +301,4 @@ async def list_models(authorization: Optional[str] = Header(None)):
                                 "message": "invalid api key"
                             }})
 
-    base_models = ["mimo-v2-flash-studio", "mimo-v2-pro"]
-    # 生成所有变体 (thinking, search, thinking+search 等组合)
-    model_variants = []
-    for base_id in base_models:
-        # 基础模型
-        model_variants.append({
-            "created": 1774937422,
-            "id": base_id,
-            "object": "model",
-            "owned_by": "xiaomi"
-        })
-        # 仅思考模式
-        model_variants.append({
-            "created": 1774937422,
-            "id": f"{base_id}-thinking",
-            "object": "model",
-            "owned_by": "xiaomi"
-        })
-        # 仅搜索模式
-        model_variants.append({
-            "created": 1774937422,
-            "id": f"{base_id}-search",
-            "object": "model",
-            "owned_by": "xiaomi"
-        })
-        # 思考+搜索 (两种顺序)
-        model_variants.append({
-            "created": 1774937422,
-            "id": f"{base_id}-thinking-search",
-            "object": "model",
-            "owned_by": "xiaomi"
-        })
-        model_variants.append({
-            "created": 1774937422,
-            "id": f"{base_id}-search-thinking",
-            "object": "model",
-            "owned_by": "xiaomi"
-        })
-
-    return {"data": model_variants, "object": "list"}
+    return {"data": build_model_list(), "object": "list"}
